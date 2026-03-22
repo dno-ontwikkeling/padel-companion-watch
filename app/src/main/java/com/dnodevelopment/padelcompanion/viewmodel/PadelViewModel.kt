@@ -6,18 +6,24 @@ import androidx.compose.runtime.setValue
 import com.dnodevelopment.padelcompanion.model.PadelState
 
 class PadelViewModel {
+    var matchStarted by mutableStateOf(false)
     var team1Score by mutableStateOf(0)
     var team2Score by mutableStateOf(0)
     var team1Advantage by mutableStateOf(false)
     var team2Advantage by mutableStateOf(false)
-    var serveRight by mutableStateOf(true)
     var team1Serving by mutableStateOf(true)
+    var team1ServeRight by mutableStateOf(true)
+    var team2ServeRight by mutableStateOf(true)
     var team1GamePoints by mutableStateOf(0)
     var team2GamePoints by mutableStateOf(0)
     var team1SetScore by mutableStateOf(0)
     var team2SetScore by mutableStateOf(0)
     var isTiebreak by mutableStateOf(false)
     private var history by mutableStateOf(listOf<PadelState>())
+
+    // Which side the current server is on
+    val currentServeRight: Boolean
+        get() = if (team1Serving) team1ServeRight else team2ServeRight
 
     fun getScoreDisplay(score: Int): String {
         return when (score) {
@@ -32,14 +38,14 @@ class PadelViewModel {
     private fun saveState() {
         history = history + PadelState(
             team1Score, team2Score, team1Advantage, team2Advantage,
-            serveRight, team1Serving, team1GamePoints, team2GamePoints,
+            team1Serving, team1ServeRight, team2ServeRight,
+            team1GamePoints, team2GamePoints,
             team1SetScore, team2SetScore, isTiebreak
         )
     }
 
     fun updateScore(team: Int) {
         saveState()
-        serveRight = !serveRight
 
         if (team1GamePoints >= 6 && team2GamePoints >= 6 && !isTiebreak) {
             isTiebreak = true
@@ -116,6 +122,13 @@ class PadelViewModel {
         team2Score = 0
         team1Advantage = false
         team2Advantage = false
+        // Toggle the server within the current serving team for their next turn
+        if (team1Serving) {
+            team1ServeRight = !team1ServeRight
+        } else {
+            team2ServeRight = !team2ServeRight
+        }
+        // Other team serves next game
         team1Serving = !team1Serving
         isTiebreak = false
     }
@@ -126,19 +139,26 @@ class PadelViewModel {
         resetGame()
     }
 
+    fun startMatch(team1ServesFirst: Boolean) {
+        team1Serving = team1ServesFirst
+        matchStarted = true
+    }
+
     fun resetScore() {
         saveState()
         team1Score = 0
         team2Score = 0
         team1Advantage = false
         team2Advantage = false
-        serveRight = true
         team1Serving = true
+        team1ServeRight = true
+        team2ServeRight = true
         team1GamePoints = 0
         team2GamePoints = 0
         team1SetScore = 0
         team2SetScore = 0
         isTiebreak = false
+        matchStarted = false
     }
 
     fun undo() {
@@ -148,8 +168,9 @@ class PadelViewModel {
             team2Score = prev.team2Score
             team1Advantage = prev.team1Advantage
             team2Advantage = prev.team2Advantage
-            serveRight = prev.serveRight
             team1Serving = prev.team1Serving
+            team1ServeRight = prev.team1ServeRight
+            team2ServeRight = prev.team2ServeRight
             team1GamePoints = prev.team1GamePoints
             team2GamePoints = prev.team2GamePoints
             team1SetScore = prev.team1SetScore
@@ -158,4 +179,4 @@ class PadelViewModel {
             history = history.dropLast(1)
         }
     }
-} 
+}

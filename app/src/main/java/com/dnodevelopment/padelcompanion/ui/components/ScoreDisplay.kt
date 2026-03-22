@@ -4,11 +4,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Undo
-import androidx.compose.material.IconButton
+import androidx.compose.ui.res.painterResource
+import com.dnodevelopment.padelcompanion.R
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,46 +22,97 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.wear.compose.material.MaterialTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import com.dnodevelopment.padelcompanion.presentation.theme.*
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 @Composable
+fun StartScreen(
+    onTeam1Selected: () -> Unit,
+    onTeam2Selected: () -> Unit
+) {
+    PadelCompanionTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(ScoreBackground),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Who serves first?",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = TextPrimary,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(PadelGreenDark)
+                            .clickable(onClick = onTeam1Selected),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Us",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(CardBackground)
+                            .clickable(onClick = onTeam2Selected),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Them",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun ClockDisplay() {
     var currentTime by remember { mutableStateOf("") }
-
-    // Format time as HH:mm:ss
     val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
 
-    // Update the time every second
     LaunchedEffect(key1 = true) {
         while (true) {
             currentTime = formatter.format(Date())
-            delay(1000) // Update every second
+            delay(1000)
         }
     }
 
-    // Display the time
     Text(
         text = currentTime,
-        fontSize = 14.sp,
-        color = Color.White,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Light,
+        color = TextSecondary,
         textAlign = TextAlign.Center
     )
 }
@@ -82,187 +136,245 @@ fun ScoreDisplay(
     onUndo: () -> Unit,
     getScoreDisplay: (Int) -> String
 ) {
-    MaterialTheme {
-        Column(
+    PadelCompanionTheme {
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
+                .background(ScoreBackground)
         ) {
-            // Top icon buttons
-            Row(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp, bottom = 8.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxSize()
+                    .padding(4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top
             ) {
-                IconButton(
-                    onClick = onReset,
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Reset",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(
-                    onClick = onUndo,
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Undo,
-                        contentDescription = "Undo",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-            // Score display
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 25.dp, bottom = 8.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Team 1 Score
-                Box(
+                // Top bar: Reset and Undo buttons
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .clickable(onClick = onTeam1Click)
+                        .fillMaxWidth()
+                        .padding(top = 8.dp, bottom = 2.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Game points (top left)
-                    Text(
-                        text = team1GamePoints.toString(),
-                        fontSize = 16.sp,
-                        color = Color.Red,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .offset(x = 4.dp, y = 4.dp)
-                    )
-                    // Set score (bottom left)
-                    Text(
-                        text = team1SetScore.toString(),
-                        fontSize = 16.sp,
-                        color = Color.Blue,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .offset(x = 4.dp, y = (-4).dp)
-                    )
-                    // Score
-                    Text(
-                        text = if (isTiebreak) team1Score.toString() else getScoreDisplay(team1Score),
-                        fontSize = 40.sp,
-                        color = Color(0xFFEEEEEE),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                    // Serve indicator (top right, tight)
-                    if (team1Serving) {
-                        Text(
-                            text = if (serveRight) "R" else "L",
-                            color = Color.Yellow,
-                            fontSize = 12.sp,
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .offset(x = (-2).dp, y = 1.dp)
+                    IconButton(
+                        onClick = onReset,
+                        modifier = Modifier.size(26.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Reset",
+                            tint = TextSecondary,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
-                    // Advantage indicator (bottom right, tight)
-                    if (team1Advantage) {
-                        Box(
-                            modifier = Modifier
-                                .size(9.dp)
-                                .clip(CircleShape)
-                                .background(Color.Blue)
-                                .align(Alignment.BottomEnd)
-                                .offset(x = (-1).dp, y = (-1).dp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    IconButton(
+                        onClick = onUndo,
+                        modifier = Modifier.size(26.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Undo,
+                            contentDescription = "Undo",
+                            tint = TextSecondary,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
-                // Dash
-                Text(
-                    text = "-",
-                    fontSize = 40.sp,
-                    color = Color(0xFFEEEEEE),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
-                // Team 2 Score
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable(onClick = onTeam2Click)
-                ) {
-                    // Game points (top left)
-                    Text(
-                        text = team2GamePoints.toString(),
-                        fontSize = 16.sp,
-                        color = Color.Red,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .offset(x = 4.dp, y = 4.dp)
-                    )
-                    // Set score (bottom left)
-                    Text(
-                        text = team2SetScore.toString(),
-                        fontSize = 16.sp,
-                        color = Color.Blue,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .offset(x = 4.dp, y = (-4).dp)
-                    )
-                    // Score
-                    Text(
-                        text = if (isTiebreak) team2Score.toString() else getScoreDisplay(team2Score),
-                        fontSize = 40.sp,
-                        color = Color(0xFFEEEEEE),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                    // Serve indicator (top right, tight)
-                    if (!team1Serving) {
-                        Text(
-                            text = if (serveRight) "R" else "L",
-                            color = Color.Yellow,
-                            fontSize = 12.sp,
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .offset(x = (-2).dp, y = 1.dp)
-                        )
-                    }
-                    // Advantage indicator (bottom right, tight)
-                    if (team2Advantage) {
-                        Box(
-                            modifier = Modifier
-                                .size(9.dp)
-                                .clip(CircleShape)
-                                .background(Color.Blue)
-                                .align(Alignment.BottomEnd)
-                                .offset(x = (-1).dp, y = (-1).dp)
-                        )
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.weight(1f))
 
-            // Add the clock at the bottom middle
-            Box(
+                // Set score row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 2.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "SETS",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextSecondary,
+                        modifier = Modifier.padding(end = 6.dp)
+                    )
+                    Text(
+                        text = "$team1SetScore",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PadelGreenLight
+                    )
+                    Text(
+                        text = " : ",
+                        fontSize = 14.sp,
+                        color = TextSecondary
+                    )
+                    Text(
+                        text = "$team2SetScore",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PadelGreenLight
+                    )
+                }
+
+                // Game score row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 1.dp, bottom = 4.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "GAMES",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextSecondary,
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+                    Text(
+                        text = "$team1GamePoints",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PadelBlue
+                    )
+                    Text(
+                        text = " : ",
+                        fontSize = 14.sp,
+                        color = TextSecondary
+                    )
+                    Text(
+                        text = "$team2GamePoints",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PadelBlue
+                    )
+                }
+
+                // Main score display
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Team 1 score box
+                    TeamScoreBox(
+                        score = if (isTiebreak) team1Score.toString() else getScoreDisplay(team1Score),
+                        isServing = team1Serving,
+                        serveRight = serveRight,
+                        hasAdvantage = team1Advantage,
+                        onClick = onTeam1Click,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // Separator
+                    Text(
+                        text = ":",
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Light,
+                        color = TextSecondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 6.dp)
+                    )
+
+                    // Team 2 score box
+                    TeamScoreBox(
+                        score = if (isTiebreak) team2Score.toString() else getScoreDisplay(team2Score),
+                        isServing = !team1Serving,
+                        serveRight = serveRight,
+                        hasAdvantage = team2Advantage,
+                        onClick = onTeam2Click,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                // Tiebreak indicator
+                if (isTiebreak) {
+                    Text(
+                        text = "TIEBREAK",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PadelAmber,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                // Clock at the bottom
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ClockDisplay()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TeamScoreBox(
+    score: String,
+    isServing: Boolean,
+    serveRight: Boolean,
+    hasAdvantage: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        CardBackground,
+                        CardBackground.copy(alpha = 0.7f)
+                    )
+                )
+            )
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp)
+    ) {
+        // Serve indicator - position indicates which player in the team is serving
+        if (isServing) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_serve_indicator),
+                contentDescription = if (serveRight) "Serve Right" else "Serve Left",
+                tint = PadelAmber,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 6.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                ClockDisplay()
+                    .size(10.dp)
+                    .align(if (serveRight) Alignment.TopEnd else Alignment.TopStart)
+                    .offset(
+                        x = if (serveRight) (-4).dp else 4.dp,
+                        y = 2.dp
+                    )
+            )
+        }
+
+        // Score + AD in a column so they don't overlap
+        Column(
+            modifier = Modifier.align(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = score,
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary,
+                textAlign = TextAlign.Center
+            )
+            if (hasAdvantage) {
+                Text(
+                    text = "AD",
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PadelAmber,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
             }
         }
     }
