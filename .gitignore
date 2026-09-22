@@ -10,3 +10,10 @@ app/release/
 .externalNativeBuild
 .cxx
 local.properties
+local.properties.bak
+
+# Signing keys — never commit. Keystore lives outside the repo,
+# path configured via STORE_FILE in local.properties.
+resources/signing-key
+*.jks
+*.keystore
