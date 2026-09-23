@@ -265,6 +265,7 @@ fun ScoreDisplay(
                         score = if (isTiebreak) team1Score.toString() else getScoreDisplay(team1Score),
                         isServing = team1Serving,
                         serveRight = serveFromRight,
+                        servingPlayerIsRightSide = servingPlayerIsRightSide,
                         hasAdvantage = team1Advantage,
                         onClick = onTeam1Click,
                         modifier = Modifier.weight(1f)
@@ -285,26 +286,12 @@ fun ScoreDisplay(
                         score = if (isTiebreak) team2Score.toString() else getScoreDisplay(team2Score),
                         isServing = !team1Serving,
                         serveRight = serveFromRight,
+                        servingPlayerIsRightSide = servingPlayerIsRightSide,
                         hasAdvantage = team2Advantage,
                         onClick = onTeam2Click,
                         modifier = Modifier.weight(1f)
                     )
                 }
-
-                // Which of the serving team's two players is serving. The icon
-                // on the score box shows which box they serve from.
-                Text(
-                    text = if (servingPlayerIsRightSide) {
-                        "RIGHT-SIDE PLAYER SERVING"
-                    } else {
-                        "LEFT-SIDE PLAYER SERVING"
-                    },
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = TextSecondary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
 
                 // Tiebreak indicator
                 if (isTiebreak) {
@@ -357,6 +344,7 @@ private fun TeamScoreBox(
     score: String,
     isServing: Boolean,
     serveRight: Boolean,
+    servingPlayerIsRightSide: Boolean,
     hasAdvantage: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -388,6 +376,23 @@ private fun TeamScoreBox(
                         x = if (serveRight) (-4).dp else 4.dp,
                         y = 2.dp
                     )
+            )
+
+            // Which of the two partners is serving: bottom-left for the
+            // left-side player, bottom-right for the right-side player.
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .align(
+                        if (servingPlayerIsRightSide) Alignment.BottomEnd
+                        else Alignment.BottomStart
+                    )
+                    .offset(
+                        x = if (servingPlayerIsRightSide) (-6).dp else 6.dp,
+                        y = (-2).dp
+                    )
+                    .clip(CircleShape)
+                    .background(PadelGreenLight)
             )
         }
 
