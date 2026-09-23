@@ -123,7 +123,8 @@ fun ScoreDisplay(
     team2Score: Int,
     team1Advantage: Boolean,
     team2Advantage: Boolean,
-    serveRight: Boolean,
+    serveFromRight: Boolean,
+    servingPlayerIsRightSide: Boolean,
     team1Serving: Boolean,
     team1GamePoints: Int,
     team2GamePoints: Int,
@@ -263,7 +264,7 @@ fun ScoreDisplay(
                     TeamScoreBox(
                         score = if (isTiebreak) team1Score.toString() else getScoreDisplay(team1Score),
                         isServing = team1Serving,
-                        serveRight = serveRight,
+                        serveRight = serveFromRight,
                         hasAdvantage = team1Advantage,
                         onClick = onTeam1Click,
                         modifier = Modifier.weight(1f)
@@ -283,12 +284,27 @@ fun ScoreDisplay(
                     TeamScoreBox(
                         score = if (isTiebreak) team2Score.toString() else getScoreDisplay(team2Score),
                         isServing = !team1Serving,
-                        serveRight = serveRight,
+                        serveRight = serveFromRight,
                         hasAdvantage = team2Advantage,
                         onClick = onTeam2Click,
                         modifier = Modifier.weight(1f)
                     )
                 }
+
+                // Which of the serving team's two players is serving. The icon
+                // on the score box shows which box they serve from.
+                Text(
+                    text = if (servingPlayerIsRightSide) {
+                        "RIGHT-SIDE PLAYER SERVING"
+                    } else {
+                        "LEFT-SIDE PLAYER SERVING"
+                    },
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
 
                 // Tiebreak indicator
                 if (isTiebreak) {

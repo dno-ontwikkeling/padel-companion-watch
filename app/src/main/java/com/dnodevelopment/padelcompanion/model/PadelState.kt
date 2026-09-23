@@ -6,12 +6,13 @@ data class PadelState(
     val team1Advantage: Boolean,
     val team2Advantage: Boolean,
     val team1Serving: Boolean,
-    val team1ServeRight: Boolean,
-    val team2ServeRight: Boolean,
+    val team1RightSidePlayerServes: Boolean,
+    val team2RightSidePlayerServes: Boolean,
     val team1GamePoints: Int,
     val team2GamePoints: Int,
     val team1SetScore: Int,
     val team2SetScore: Int,
     val isTiebreak: Boolean,
-    val tiebreakStarterIsTeam1: Boolean
+    val tiebreakStarterIsTeam1: Boolean,
+    val pointsPlayedInGame: Int
 )

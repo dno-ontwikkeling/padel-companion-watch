@@ -23,15 +23,69 @@ class PadelViewModelTest {
     }
 
     @Test
+    fun `server stays the same all game while the service box alternates`() {
+        val viewModel = PadelViewModel()
+        viewModel.startMatch(true)
+
+        // Games 0-0, points 0-0: us serving, right-side player, from the right.
+        assertTrue(viewModel.team1Serving)
+        assertTrue(viewModel.servingPlayerIsRightSide)
+        assertTrue(viewModel.serveFromRight)
+
+        // Games 0-0, points 15-0: same player, now serving from the left.
+        viewModel.updateScore(1)
+        assertTrue(viewModel.team1Serving)
+        assertTrue("the server does not change mid-game", viewModel.servingPlayerIsRightSide)
+        assertFalse(viewModel.serveFromRight)
+    }
+
+    @Test
+    fun `serve passes to the other team each game and partners alternate`() {
+        val viewModel = PadelViewModel()
+        viewModel.startMatch(true)
+
+        viewModel.winGame(1) // games 1-0
+
+        // Them serving, their right-side player, from the right.
+        assertFalse(viewModel.team1Serving)
+        assertTrue(viewModel.servingPlayerIsRightSide)
+        assertTrue(viewModel.serveFromRight)
+        viewModel.updateScore(1)
+        assertFalse(viewModel.serveFromRight)
+        repeat(3) { viewModel.updateScore(1) } // games 2-0
+
+        // Back to us, and now our other player serves.
+        assertTrue(viewModel.team1Serving)
+        assertFalse("our left-side player serves our second game", viewModel.servingPlayerIsRightSide)
+        assertTrue(viewModel.serveFromRight)
+        viewModel.updateScore(1)
+        assertFalse(viewModel.serveFromRight)
+    }
+
+    @Test
+    fun `service box keeps alternating through deuce and advantage`() {
+        val viewModel = PadelViewModel()
+        viewModel.startMatch(true)
+
+        repeat(3) { viewModel.updateScore(1) }
+        repeat(3) { viewModel.updateScore(2) } // deuce, six points played
+        assertTrue("deuce is served from the right", viewModel.serveFromRight)
+
+        viewModel.updateScore(1) // advantage
+        assertFalse("the advantage point is served from the left", viewModel.serveFromRight)
+
+        viewModel.updateScore(2) // back to deuce
+        assertTrue(viewModel.serveFromRight)
+    }
+
+    @Test
     fun `tiebreak starts at six games all and opens from the right`() {
         val viewModel = viewModelAtSixGamesAll()
 
         assertTrue("6-6 should be a tiebreak", viewModel.isTiebreak)
         assertEquals(6, viewModel.team1GamePoints)
         assertEquals(6, viewModel.team2GamePoints)
-        assertEquals(0, viewModel.team1Score)
-        assertEquals(0, viewModel.team2Score)
-        assertTrue("opening tiebreak point is served from the right", viewModel.currentServeRight)
+        assertTrue("opening tiebreak point is served from the right", viewModel.serveFromRight)
     }
 
     @Test
@@ -54,14 +108,14 @@ class PadelViewModelTest {
     }
 
     @Test
-    fun `tiebreak serve side alternates every point`() {
+    fun `tiebreak service box alternates every point`() {
         val viewModel = viewModelAtSixGamesAll()
 
         repeat(8) { index ->
             assertEquals(
                 "point ${index + 1} should be served from the ${if (index % 2 == 0) "right" else "left"}",
                 index % 2 == 0,
-                viewModel.currentServeRight
+                viewModel.serveFromRight
             )
             viewModel.updateScore(if (index % 2 == 0) 1 else 2)
         }
@@ -74,14 +128,42 @@ class PadelViewModelTest {
 
         viewModel.updateScore(1) // point 1 played
         assertEquals("opponent serves point 2", !starter, viewModel.team1Serving)
-        assertFalse("point 2 from the left", viewModel.currentServeRight)
+        assertFalse("point 2 from the left", viewModel.serveFromRight)
 
         viewModel.updateScore(2) // point 2 played
         assertEquals("opponent still serving for point 3", !starter, viewModel.team1Serving)
-        assertTrue("point 3 from the right", viewModel.currentServeRight)
+        assertTrue("point 3 from the right", viewModel.serveFromRight)
 
         viewModel.updateScore(1) // point 3 played
         assertEquals("serve returns to the opening team", starter, viewModel.team1Serving)
+    }
+
+    @Test
+    fun `all four players serve in rotation during a tiebreak`() {
+        val viewModel = viewModelAtSixGamesAll()
+
+        // (serving team, is it that team's right-side player) for points 1..9
+        val servers = mutableListOf<Pair<Boolean, Boolean>>()
+        repeat(9) { index ->
+            servers.add(viewModel.team1Serving to viewModel.servingPlayerIsRightSide)
+            viewModel.updateScore(if (index % 2 == 0) 1 else 2)
+        }
+
+        val opener = servers[0]
+
+        assertEquals("points 2 and 3 go to the other team", !opener.first, servers[1].first)
+        assertEquals("the same player serves points 2 and 3", servers[1], servers[2])
+
+        assertEquals("points 4 and 5 return to the opening team", opener.first, servers[3].first)
+        assertEquals("but their other player serves", !opener.second, servers[3].second)
+        assertEquals("the same player serves points 4 and 5", servers[3], servers[4])
+
+        assertEquals("points 6 and 7 go to the other team", !opener.first, servers[5].first)
+        assertEquals("their other player serves", !servers[1].second, servers[5].second)
+        assertEquals("the same player serves points 6 and 7", servers[5], servers[6])
+
+        assertEquals("point 8 comes back round to the opening player", opener, servers[7])
+        assertEquals("who also serves point 9", servers[7], servers[8])
     }
 
     @Test
@@ -167,6 +249,6 @@ class PadelViewModelTest {
         viewModel.undo()
         assertEquals("undo must put the serve back", starter, viewModel.team1Serving)
         assertTrue(viewModel.isTiebreak)
-        assertEquals(0, viewModel.team1Score)
+        assertTrue("and put the serve back on the right", viewModel.serveFromRight)
     }
 }

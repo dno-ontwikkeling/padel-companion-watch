@@ -12,13 +12,22 @@ class PadelViewModel {
     var team1Advantage by mutableStateOf(false)
     var team2Advantage by mutableStateOf(false)
     var team1Serving by mutableStateOf(true)
-    var team1ServeRight by mutableStateOf(true)
-    var team2ServeRight by mutableStateOf(true)
     var team1GamePoints by mutableStateOf(0)
     var team2GamePoints by mutableStateOf(0)
     var team1SetScore by mutableStateOf(0)
     var team2SetScore by mutableStateOf(0)
     var isTiebreak by mutableStateOf(false)
+
+    // Which of a team's two players serves the next time that team serves.
+    // Partners take turns, so this flips each time their team finishes serving
+    // a game. True means the right-side (deuce court) player.
+    var team1RightSidePlayerServes by mutableStateOf(true)
+    var team2RightSidePlayerServes by mutableStateOf(true)
+
+    // Points played in the current game or tiebreak. Drives which box the serve
+    // is taken from, and is counted separately from the score because deuce and
+    // advantage points do not always change team1Score/team2Score.
+    private var pointsPlayedInGame by mutableStateOf(0)
 
     // Which team served the opening point of the current tiebreak. Serve then
     // rotates in blocks of two points, so this is the reference for working out
@@ -28,17 +37,30 @@ class PadelViewModel {
     private var history by mutableStateOf(listOf<PadelState>())
 
     /**
-     * Which side the current server serves from.
+     * Which service box the next point is served from.
      *
-     * In a tiebreak the opening point is served from the right and the side
-     * alternates every point, regardless of which team is serving. Outside a
-     * tiebreak the side tracks which of the two partners is serving this game.
+     * The first point of a game or tiebreak is served from the right, and the
+     * box alternates on every point after that. This is independent of which
+     * player is serving.
      */
-    val currentServeRight: Boolean
-        get() = when {
-            isTiebreak -> (team1Score + team2Score) % 2 == 0
-            team1Serving -> team1ServeRight
-            else -> team2ServeRight
+    val serveFromRight: Boolean
+        get() = pointsPlayedInGame % 2 == 0
+
+    /**
+     * Whether the serving team's right-side player is the one serving.
+     *
+     * Within a game the server never changes. Partners alternate across their
+     * team's service games, and during a tiebreak the same alternation carries
+     * on each time a team's turn to serve comes round, so all four players
+     * serve in rotation.
+     */
+    val servingPlayerIsRightSide: Boolean
+        get() = if (isTiebreak) {
+            tiebreakServingPlayerIsRightSide()
+        } else if (team1Serving) {
+            team1RightSidePlayerServes
+        } else {
+            team2RightSidePlayerServes
         }
 
     /**
@@ -50,13 +72,10 @@ class PadelViewModel {
      */
     val shouldChangeSides: Boolean
         get() = if (isTiebreak) {
-            val pointsPlayed = team1Score + team2Score
-            pointsPlayed > 0 && pointsPlayed % 6 == 0
+            pointsPlayedInGame > 0 && pointsPlayedInGame % 6 == 0
         } else {
             val gamesPlayed = team1GamePoints + team2GamePoints
-            gamesPlayed > 0 && gamesPlayed % 2 == 1 &&
-                team1Score == 0 && team2Score == 0 &&
-                !team1Advantage && !team2Advantage
+            gamesPlayed > 0 && gamesPlayed % 2 == 1 && pointsPlayedInGame == 0
         }
 
     fun getScoreDisplay(score: Int): String {
@@ -72,15 +91,16 @@ class PadelViewModel {
     private fun saveState() {
         history = history + PadelState(
             team1Score, team2Score, team1Advantage, team2Advantage,
-            team1Serving, team1ServeRight, team2ServeRight,
+            team1Serving, team1RightSidePlayerServes, team2RightSidePlayerServes,
             team1GamePoints, team2GamePoints,
             team1SetScore, team2SetScore, isTiebreak,
-            tiebreakStarterIsTeam1
+            tiebreakStarterIsTeam1, pointsPlayedInGame
         )
     }
 
     fun updateScore(team: Int) {
         saveState()
+        pointsPlayedInGame++
 
         when (team) {
             1 -> {
@@ -89,7 +109,7 @@ class PadelViewModel {
                     if (team1Score >= 7 && team1Score - team2Score >= 2) {
                         winSetViaTiebreak(team1Wins = true)
                     } else {
-                        updateTiebreakServer()
+                        updateTiebreakServingTeam()
                     }
                 } else if (team1Score >= 3 && team2Score >= 3) {
                     if (team2Advantage) {
@@ -118,7 +138,7 @@ class PadelViewModel {
                     if (team2Score >= 7 && team2Score - team1Score >= 2) {
                         winSetViaTiebreak(team1Wins = false)
                     } else {
-                        updateTiebreakServer()
+                        updateTiebreakServingTeam()
                     }
                 } else if (team1Score >= 3 && team2Score >= 3) {
                     if (team1Advantage) {
@@ -145,16 +165,34 @@ class PadelViewModel {
     }
 
     /**
-     * Works out who serves the next tiebreak point.
-     *
-     * The team that opened the tiebreak serves one point, then the teams take
-     * two points each in turn. Numbering points from one, that means points
-     * 1, 4, 5, 8, 9... belong to the opening team and 2, 3, 6, 7... to the other.
+     * The tiebreak serving turn covering a given point number, counting points
+     * from one. The opening team serves turn 0, a single point; every turn after
+     * that is two points long.
      */
-    private fun updateTiebreakServer() {
-        val nextPointNumber = team1Score + team2Score + 1
-        val starterServes = (nextPointNumber / 2) % 2 == 0
+    private fun tiebreakTurnFor(pointNumber: Int): Int = pointNumber / 2
+
+    /** Works out which team serves the next tiebreak point. */
+    private fun updateTiebreakServingTeam() {
+        val turn = tiebreakTurnFor(pointsPlayedInGame + 1)
+        val starterServes = turn % 2 == 0
         team1Serving = if (starterServes) tiebreakStarterIsTeam1 else !tiebreakStarterIsTeam1
+    }
+
+    /**
+     * Works out which of the serving team's two players takes the next tiebreak
+     * point. Each time a team's turn comes round again their other player serves,
+     * which continues the rotation established during the set.
+     */
+    private fun tiebreakServingPlayerIsRightSide(): Boolean {
+        val turn = tiebreakTurnFor(pointsPlayedInGame + 1)
+        val starterServes = turn % 2 == 0
+        // How many turns this team has already had, counting from zero.
+        val teamTurnIndex = if (starterServes) turn / 2 else (turn - 1) / 2
+        val servingTeamIsTeam1 =
+            if (starterServes) tiebreakStarterIsTeam1 else !tiebreakStarterIsTeam1
+        val firstServerOfTiebreak =
+            if (servingTeamIsTeam1) team1RightSidePlayerServes else team2RightSidePlayerServes
+        return if (teamTurnIndex % 2 == 0) firstServerOfTiebreak else !firstServerOfTiebreak
     }
 
     /**
@@ -195,11 +233,12 @@ class PadelViewModel {
         team2Score = 0
         team1Advantage = false
         team2Advantage = false
-        // Toggle the server within the current serving team for their next turn
+        pointsPlayedInGame = 0
+        // The team that just served hands over to their partner for next time
         if (team1Serving) {
-            team1ServeRight = !team1ServeRight
+            team1RightSidePlayerServes = !team1RightSidePlayerServes
         } else {
-            team2ServeRight = !team2ServeRight
+            team2RightSidePlayerServes = !team2RightSidePlayerServes
         }
         // Other team serves next game
         team1Serving = !team1Serving
@@ -218,14 +257,15 @@ class PadelViewModel {
         team1Advantage = false
         team2Advantage = false
         team1Serving = true
-        team1ServeRight = true
-        team2ServeRight = true
+        team1RightSidePlayerServes = true
+        team2RightSidePlayerServes = true
         team1GamePoints = 0
         team2GamePoints = 0
         team1SetScore = 0
         team2SetScore = 0
         isTiebreak = false
         tiebreakStarterIsTeam1 = true
+        pointsPlayedInGame = 0
         matchStarted = false
     }
 
@@ -237,14 +277,15 @@ class PadelViewModel {
             team1Advantage = prev.team1Advantage
             team2Advantage = prev.team2Advantage
             team1Serving = prev.team1Serving
-            team1ServeRight = prev.team1ServeRight
-            team2ServeRight = prev.team2ServeRight
+            team1RightSidePlayerServes = prev.team1RightSidePlayerServes
+            team2RightSidePlayerServes = prev.team2RightSidePlayerServes
             team1GamePoints = prev.team1GamePoints
             team2GamePoints = prev.team2GamePoints
             team1SetScore = prev.team1SetScore
             team2SetScore = prev.team2SetScore
             isTiebreak = prev.isTiebreak
             tiebreakStarterIsTeam1 = prev.tiebreakStarterIsTeam1
+            pointsPlayedInGame = prev.pointsPlayedInGame
             history = history.dropLast(1)
         }
     }
