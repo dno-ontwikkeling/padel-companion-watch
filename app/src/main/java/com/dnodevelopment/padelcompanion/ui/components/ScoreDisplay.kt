@@ -130,6 +130,7 @@ fun ScoreDisplay(
     team1SetScore: Int,
     team2SetScore: Int,
     isTiebreak: Boolean,
+    shouldChangeSides: Boolean,
     onTeam1Click: () -> Unit,
     onTeam2Click: () -> Unit,
     onReset: () -> Unit,
@@ -298,6 +299,25 @@ fun ScoreDisplay(
                         color = PadelAmber,
                         modifier = Modifier.padding(top = 2.dp)
                     )
+                }
+
+                // Shown between points whenever the teams should swap ends
+                if (shouldChangeSides) {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 3.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(PadelAmber.copy(alpha = 0.18f))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "CHANGE SIDES",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PadelAmber,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.weight(1f))

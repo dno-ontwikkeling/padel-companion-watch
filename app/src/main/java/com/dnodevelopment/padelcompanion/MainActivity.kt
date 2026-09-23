@@ -34,6 +34,7 @@ class MainActivity : ComponentActivity() {
                     team1SetScore = viewModel.team1SetScore,
                     team2SetScore = viewModel.team2SetScore,
                     isTiebreak = viewModel.isTiebreak,
+                    shouldChangeSides = viewModel.shouldChangeSides,
                     onTeam1Click = { viewModel.updateScore(1) },
                     onTeam2Click = { viewModel.updateScore(2) },
                     onReset = { viewModel.resetScore() },
