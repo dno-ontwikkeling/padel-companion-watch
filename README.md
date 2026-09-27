@@ -4,25 +4,37 @@
 
 # PadelCompanion
 
-A padel score tracker designed for Wear OS smartwatches. Keep track of your padel match score directly from your wrist — no phone needed.
+A padel score tracker for Wear OS smartwatches. Keep the score of your match from your wrist, with no phone needed.
+
+[Get it on Google Play](https://play.google.com/store/apps/details?id=com.dnodevelopment.padelcompanion) · Current version: 1.4 (versionCode 5)
+
+<p align="center">
+  <img src="resources/Screenshots/serve.png" alt="Who serves first" width="160" />
+  <img src="resources/Screenshots/scoreboard.png" alt="Scoreboard" width="160" />
+  <img src="resources/Screenshots/scoreboard-ad.png" alt="Advantage" width="160" />
+  <img src="resources/Screenshots/tiebreak.png" alt="Tiebreak" width="160" />
+  <img src="resources/Screenshots/change-sides.png" alt="Change sides" width="160" />
+</p>
 
 ## Features
 
-- **Full padel scoring** — Standard padel scoring with points (0, 15, 30, 40), advantage, games, sets, and tiebreaks
-- **Serve tracking** — Tracks which team is serving and which side (left/right) the serve is on, alternating automatically
-- **Tiebreak support** — Automatically enters tiebreak mode at 6-6 in games, with correct tiebreak scoring rules
-- **Undo** — Tap to undo the last point if you made a mistake, with full state history
-- **Reset** — Start a fresh match at any time
-- **Always-on display** — Screen stays on during your match so you can glance at the score anytime
-- **Standalone** — Runs entirely on your watch, no phone companion app required
-- **Clock display** — Current time shown on the score screen so you never lose track
+- **Full padel scoring** — Points (0, 15, 30, 40), deuce and advantage, games, and sets won 6 games with a 2-game lead
+- **Tiebreaks** — Starts automatically at 6-6, played to 7 points with a 2-point lead, and shown with a TIEBREAK label
+- **Serve tracking** — Shows which team is serving, which of the two partners serves (green dot), and which service box to serve from (serve icon). The box alternates every point, serve passes to the other team each game, and partners take turns across their team's service games
+- **Tiebreak serve rotation** — First point by one server, then two points each, with all four players serving in rotation
+- **Change sides prompt** — A CHANGE SIDES notice appears after every odd game, and every 6 points in a tiebreak
+- **Undo** — Step back through every point of the match
+- **Reset** — Clear the match and return to the start screen
+- **Screen stays on** — The watch screen is kept on while the app is open so you can glance at the score
+- **Clock** — Current time shown at the bottom of the scoreboard
+- **Standalone and private** — Runs entirely on the watch. No phone app, no network access, no accounts, no data stored
 
 ## How It Works
 
-1. **Start a match** — Choose which team serves first ("Us" or "Them")
-2. **Score points** — Tap the left score box to award a point to your team, or the right box for the opponents
-3. **Track progress** — Sets, games, and current point score are all visible at a glance
-4. **Undo or reset** — Use the top buttons to undo the last action or reset the entire match
+1. **Start a match** — Choose who serves first: "Us" or "Them"
+2. **Score points** — Tap the left box to give your team a point, or the right box for the opponents
+3. **Follow the match** — Sets, games and the current point score are visible at a glance, along with the serve indicators and change-sides prompt
+4. **Undo or reset** — Use the buttons at the top: reset (left) or undo (right)
 
 ## Tech Stack
 
@@ -31,34 +43,77 @@ A padel score tracker designed for Wear OS smartwatches. Keep track of your pade
 - **UI:** Jetpack Compose for Wear OS
 - **Min SDK:** 30 (Android 11 / Wear OS 3)
 - **Target SDK:** 35
+- **Tests:** JUnit 4
 
 ## Building
 
-Clone the repository and open it in Android Studio. Build and deploy to a Wear OS device or emulator:
+Open the project in Android Studio, or use Gradle from the command line.
+
+Install a debug build on a connected Wear OS device or emulator:
 
 ```bash
 ./gradlew :app:installDebug
+```
+
+Run the unit tests:
+
+```bash
+./gradlew :app:testDebugUnitTest
+```
+
+### Release signing
+
+The release keystore is kept outside the repository. The build reads its location and credentials from `local.properties` in the project root:
+
+```properties
+STORE_FILE=C:/path/to/release-keystore.jks
+STORE_PASSWORD=...
+KEY_ALIAS=...
+KEY_PASSWORD=...
+```
+
+Never commit `local.properties` or the keystore; both are ignored by `.gitignore`.
+
+Build the signed release bundle for the Play Store:
+
+```bash
+./gradlew :app:bundleRelease
 ```
 
 ## Project Structure
 
 ```
 app/src/main/java/com/dnodevelopment/padelcompanion/
-├── MainActivity.kt              # Entry point, wires up UI and ViewModel
+├── MainActivity.kt              # Entry point: wires the ViewModel to the UI and keeps the screen on
 ├── model/
-│   └── PadelState.kt            # Data class for match state snapshots (undo history)
+│   └── PadelState.kt            # Snapshot of the match state, used for undo history
 ├── viewmodel/
-│   └── PadelViewModel.kt        # Scoring logic, serve rotation, tiebreak rules
+│   └── PadelViewModel.kt        # Scoring, serve rotation, tiebreak and change-sides rules
 ├── ui/components/
-│   └── ScoreDisplay.kt          # All Composable UI: start screen, score board, clock
+│   └── ScoreDisplay.kt          # Composables: start screen, scoreboard, serve indicators, clock
 └── presentation/
-    ├── MainActivity.kt           # Wear OS template entry (unused)
+    ├── MainActivity.kt          # Wear OS template entry (unused)
     └── theme/
-        └── Theme.kt              # Padel-themed color palette
+        └── Theme.kt             # Colour palette (pure black background for Wear OS quality rules)
+
+app/src/main/res/drawable/
+└── ic_serve_indicator.xml       # Service box icon
+
+app/src/test/java/com/dnodevelopment/padelcompanion/viewmodel/
+└── PadelViewModelTest.kt        # Unit tests for serve rotation, tiebreaks, change sides and undo
+
+resources/
+├── Screenshots/                 # Play Store screenshots
+├── feature-graphic.png          # Play Store feature graphic
+└── privacy-policy.html          # Privacy policy linked from the Play Store listing
 ```
+
+## Privacy
+
+PadelCompanion collects no data. See the [privacy policy](resources/privacy-policy.html).
 
 ## License
 
-MIT License — see [LICENSE.md](LICENSE.md) for details.
+Proprietary. All rights reserved. See [LICENSE.md](LICENSE.md).
 
 Copyright (c) 2025 Olivier De Neef
