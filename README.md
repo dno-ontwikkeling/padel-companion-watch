@@ -6,7 +6,7 @@
 
 A padel score tracker for Wear OS smartwatches. Keep the score of your match from your wrist, with no phone needed.
 
-[Get it on Google Play](https://play.google.com/store/apps/details?id=com.dnodevelopment.padelcompanion) · Current version: 1.4 (versionCode 5)
+[Get it on Google Play](https://play.google.com/store/apps/details?id=com.dnodevelopment.padelcompanion) · [![Current version](https://img.shields.io/github/v/release/dno-ontwikkeling/padel-companion-watch?label=version)](https://github.com/dno-ontwikkeling/padel-companion-watch/releases/latest)
 
 <p align="center">
   <img src="resources/Screenshots/serve.png" alt="Who serves first" width="160" />
@@ -79,6 +79,17 @@ Build the signed release bundle for the Play Store:
 ```bash
 ./gradlew :app:bundleRelease
 ```
+
+### Releasing
+
+Releases are built and published by GitHub Actions:
+
+1. Push a `fix:` (patch) or `feat:` (minor) commit to `main`. The **Release** workflow tags the next version, builds a signed `.aab` and attaches it to a GitHub pre-release. The versionCode is `major*10000 + minor*100 + patch`.
+2. Run **Promote Release** from the Actions tab. It uploads that bundle to the `wear:production` track in Google Play, with the `feat:`/`fix:` commit subjects as release notes, and marks the GitHub release as latest.
+
+The version badge above and the product page on dno-ontwikkeling.com follow the latest GitHub release.
+
+Signing uses the repository secrets `KEYSTORE_BASE64`, `STORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. Google Play access is keyless through Workload Identity Federation (repository variables `WIF_PROVIDER` and `PLAY_SERVICE_ACCOUNT`).
 
 ## Project Structure
 
