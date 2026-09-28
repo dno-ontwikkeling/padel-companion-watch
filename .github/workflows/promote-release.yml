@@ -1,7 +1,16 @@
 name: Promote Release
 
-# Flips a pre-release (created by release.yml) to a stable "latest" release.
-# Run manually from the Actions tab once the bundle is live in the Play Console.
+# Publishes a pre-release (created by release.yml) to Google Play and then
+# flips it to a stable "latest" GitHub release. Run manually from the Actions
+# tab once the bundle from the pre-release has been verified.
+#
+# The bundle attached to the GitHub release is uploaded to the Play track in
+# the PLAY_TRACK repository variable (default: production) and sent for review.
+# Release notes are the feat/fix commit subjects since the previous tag.
+#
+# Play access is keyless via Workload Identity Federation; the repository
+# variables WIF_PROVIDER and PLAY_SERVICE_ACCOUNT point at the Google Cloud
+# pool provider and the service account invited in the Play Console.
 
 on:
   workflow_dispatch:
@@ -12,11 +21,16 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   promote:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Find pre-release
         id: pre
         env:
@@ -37,6 +51,30 @@ jobs:
           fi
           echo "id=$(echo "$release" | jq -r '.id')" >> "$GITHUB_OUTPUT"
           echo "tag=$(echo "$release" | jq -r '.tag_name')" >> "$GITHUB_OUTPUT"
+
+      - name: Download the bundle
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release download "${{ steps.pre.outputs.tag }}" --pattern '*.aab' --output bundle.aab
+
+      - name: Authenticate to Google Play
+        id: gcp
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.PLAY_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Upload to Google Play
+        env:
+          PLAY_TOKEN: ${{ steps.gcp.outputs.access_token }}
+          TAG: ${{ steps.pre.outputs.tag }}
+          TRACK: ${{ vars.PLAY_TRACK || 'production' }}
+        run: |
+          notes=$(bash .github/scripts/play.sh notes "$TAG")
+          echo "Release notes:"; echo "$notes"
+          bash .github/scripts/play.sh upload bundle.aab "$TRACK" "$notes"
 
       - name: Promote to stable release
         env:
