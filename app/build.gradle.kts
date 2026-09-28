@@ -14,6 +14,9 @@ val localProperties = Properties().apply {
     }
 }
 
+fun signingValue(key: String): String? =
+    System.getenv(key)?.takeIf { it.isNotEmpty() } ?: localProperties.getProperty(key)
+
 android {
     namespace = "com.dnodevelopment.padelcompanion"
     compileSdk = 35
@@ -22,24 +25,32 @@ android {
         applicationId = "com.dnodevelopment.padelcompanion"
         minSdk = 30
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.4"
+        // The release workflow passes -PversionName=x.y.z and
+        // -PversionCode=<major*10000 + minor*100 + patch> derived from the git tag.
+        versionCode = (findProperty("versionCode") as String?)?.toInt() ?: 5
+        versionName = findProperty("versionName") as String? ?: "1.4"
 
     }
 
     signingConfigs {
-        create("release") {
-            storeFile = file(localProperties.getProperty("STORE_FILE"))
-            storePassword = localProperties.getProperty("STORE_PASSWORD")
-            keyAlias = localProperties.getProperty("KEY_ALIAS")
-            keyPassword = localProperties.getProperty("KEY_PASSWORD")
+        // Local builds read the upload key from local.properties; CI passes the
+        // same keys as environment variables. Without a store file the release
+        // build is left unsigned, so debug builds and tests still work.
+        val storePath = signingValue("STORE_FILE")
+        if (storePath != null) {
+            create("release") {
+                storeFile = file(storePath)
+                storePassword = signingValue("STORE_PASSWORD")
+                keyAlias = signingValue("KEY_ALIAS")
+                keyPassword = signingValue("KEY_PASSWORD")
+            }
         }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.findByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
