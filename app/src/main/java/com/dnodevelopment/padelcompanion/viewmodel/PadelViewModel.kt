@@ -214,6 +214,9 @@ class PadelViewModel {
         team1GamePoints = 0
         team2GamePoints = 0
         resetGame()
+        // The team that received first in the tiebreak serves the next set,
+        // whichever team happened to serve the last tiebreak point.
+        team1Serving = !tiebreakStarterIsTeam1
     }
 
     private fun checkSetWinner() {

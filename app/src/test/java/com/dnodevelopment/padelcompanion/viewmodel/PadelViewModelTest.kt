@@ -182,6 +182,52 @@ class PadelViewModelTest {
     }
 
     @Test
+    fun `team that received first in a 7-0 tiebreak serves the next set`() {
+        val viewModel = viewModelAtSixGamesAll()
+        val tiebreakStarter = viewModel.team1Serving
+
+        repeat(7) { viewModel.updateScore(1) } // 7 points, the receivers serve the last one
+
+        assertEquals(1, viewModel.team1SetScore)
+        assertEquals(
+            "the team that received first in the tiebreak serves the next set",
+            !tiebreakStarter,
+            viewModel.team1Serving
+        )
+    }
+
+    @Test
+    fun `team that received first in a 7-1 tiebreak serves the next set`() {
+        val viewModel = viewModelAtSixGamesAll()
+        val tiebreakStarter = viewModel.team1Serving
+
+        viewModel.updateScore(2)
+        repeat(7) { viewModel.updateScore(1) } // 8 points, the starters serve the last one
+
+        assertEquals(1, viewModel.team1SetScore)
+        assertEquals(
+            "the team that received first in the tiebreak serves the next set",
+            !tiebreakStarter,
+            viewModel.team1Serving
+        )
+    }
+
+    @Test
+    fun `team that opened a 6-4 set serves the next set too`() {
+        val viewModel = PadelViewModel()
+        viewModel.startMatch(true)
+        repeat(4) {
+            viewModel.winGame(1)
+            viewModel.winGame(2)
+        }
+        viewModel.winGame(1)
+        viewModel.winGame(1) // 6-4 after ten games, team 2 served the last one
+
+        assertEquals(1, viewModel.team1SetScore)
+        assertTrue("serve keeps alternating across the set boundary", viewModel.team1Serving)
+    }
+
+    @Test
     fun `serve changes hands after a set is won on games`() {
         val viewModel = PadelViewModel()
         viewModel.startMatch(true)
