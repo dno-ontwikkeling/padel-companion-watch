@@ -5,7 +5,9 @@ name: Promote Release
 # tab once the bundle from the pre-release has been verified.
 #
 # The bundle attached to the GitHub release is uploaded to the Play track in
-# the PLAY_TRACK repository variable (default: production) and sent for review.
+# the PLAY_TRACK repository variable (default: wear:production, the Wear OS
+# form factor track; the phone "production" track rejects watch bundles) and
+# sent for review.
 # Release notes are the feat/fix commit subjects since the previous tag.
 #
 # Play access is keyless via Workload Identity Federation; the repository
@@ -70,7 +72,7 @@ jobs:
         env:
           PLAY_TOKEN: ${{ steps.gcp.outputs.access_token }}
           TAG: ${{ steps.pre.outputs.tag }}
-          TRACK: ${{ vars.PLAY_TRACK || 'production' }}
+          TRACK: ${{ vars.PLAY_TRACK || 'wear:production' }}
         run: |
           notes=$(bash .github/scripts/play.sh notes "$TAG")
           echo "Release notes:"; echo "$notes"
@@ -81,7 +83,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh api repos/${{ github.repository }}/releases/${{ steps.pre.outputs.id }} \
-            --method PATCH \
+            --method PATCH --silent \
             --field prerelease=false \
             --field make_latest=true
           echo "Promoted ${{ steps.pre.outputs.tag }} to stable release"
