@@ -12,7 +12,7 @@ name: Release
 # A push to main with no feat/fix/breaking commit produces no tag and no
 # release. When a bump happens the build job produces a signed Android App
 # Bundle (.aab) and attaches it to a GitHub pre-release; promote-release.yml
-# flips it to stable once the bundle is live in the Play Console.
+# uploads that bundle to Google Play and flips the release to stable.
 #
 # versionName is the tag without the leading v. versionCode is derived from it
 # as major*10000 + minor*100 + patch, so it always increases with the version

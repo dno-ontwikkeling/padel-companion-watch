@@ -12,10 +12,19 @@ PACKAGE=com.dnodevelopment.padelcompanion
 API=https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PACKAGE
 UPLOAD_API=https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/$PACKAGE
 
+# Prints the response body; on an HTTP error prints Google's message instead
+# and fails, so the workflow log shows why the API refused the call.
 call() {
-  local method=$1 url=$2
+  local method=$1 url=$2 response status
   shift 2
-  curl -sS --fail-with-body -X "$method" -H "Authorization: Bearer $PLAY_TOKEN" "$@" "$url"
+  response=$(curl -sS -w '\n%{http_code}' -X "$method" -H "Authorization: Bearer $PLAY_TOKEN" "$@" "$url")
+  status=${response##*$'\n'}
+  response=${response%$'\n'*}
+  if [ "$status" -ge 400 ]; then
+    echo "::error::$method ${url#*"$PACKAGE"} returned HTTP $status: $(jq -r '.error.message // .' <<< "$response")" >&2
+    exit 1
+  fi
+  printf '%s' "$response"
 }
 
 case "${1:-}" in
